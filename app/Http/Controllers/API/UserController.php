@@ -74,21 +74,25 @@ class UserController extends Controller
 
 
     public function updateUser(Request $request, $id) {
-        // Find user
+        \Log::info("Updating user with ID: " . $id);
+        
         $user = User::find($id);
         if (!$user) {
+            \Log::error("User not found: " . $id);
             return response()->json(['status' => false, 'message' => "User not found"], 404);
         }
+        
+        \Log::info("User found: " . json_encode($user));
     
-        // Validate request
         $validator = Validator::make($request->all(), [
             'name' => "required|string",
-            'email' => "required|string|email|unique:users,email".$id,
+            'email' => "required|string|email|unique:users,email,$id",
             'phone' => "required|numeric",
-            'password' => "nullable|min:6"  // Password is optional
+            'password' => "nullable|min:6"
         ]);
     
         if ($validator->fails()) {
+            \Log::error("Validation failed: " . json_encode($validator->errors()));
             return response()->json([
                 'status' => false,
                 'message' => "Validation error occurred",
@@ -96,17 +100,19 @@ class UserController extends Controller
             ], 400);
         }
     
-        // Update user fields
+        \Log::info("Validation passed. Updating user...");
+    
         $user->name = $request->name;
         $user->email = $request->email;
         $user->phone = $request->phone;
-        
-        // Update password only if provided
+    
         if ($request->filled('password')) {
             $user->password = bcrypt($request->password);
         }
     
         $user->save();
+    
+        \Log::info("User updated successfully.");
     
         return response()->json([
             'status' => true,
@@ -114,6 +120,7 @@ class UserController extends Controller
             'data' => $user
         ], 200);
     }
+    
 
 
 
